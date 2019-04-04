@@ -4,7 +4,7 @@ $(document).ready(function(){
   var $input = $(".typeahead");
   $input.typeahead({
      source: course_source,
-    autoSelect: false
+     autoSelect: false
   });
 
   $input.change(function() {
@@ -14,14 +14,15 @@ $(document).ready(function(){
 //    console.log($("input[name=]")[0])
     if (current) {
       // Some item from your model is active!
-      if (current.name.toLowerCase() == $input.val().toLowerCase()) {
+      if (current.name == $(this).val()) {
         // This means the exact match is found. Use toLowerCase() if you want case insensitive match.
         console.log("currently active matches");
         var units_input_name = this.name + "_units";
         console.log(units_input_name);
         console.log(current.course_units);
         units_input = $(document).get(0).getElementsByName(units_input_name)[0];
-        units = current.course_units.split("-")[0].strip()
+        units = current.course_units.split("-")[0].trim()
+        console.log("min: " + units)
         // error checking because this assumes it is in form like 2-5
         units_input.value = parseInt(units);
       } else {
