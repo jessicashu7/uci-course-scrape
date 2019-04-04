@@ -4,6 +4,7 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 import unicodedata
+from flask import Flask, render_template
 
 page_url = "http://catalogue.uci.edu/allcourses/compsci/"
 page_response = requests.get(page_url)
@@ -13,11 +14,16 @@ firebase_admin.initialize_app(cred)
 
 db = firestore.client()
 
+app = Flask(__name__)
 
-if __name__ == "__main__":
+@app.route('/', methods= ['GET'] )
+def main():
+    #scrape_and_store()
+    source = retrieve_source()
+    return render_template("index.html", source = source)
+
+def scrape_and_store():
     soup = BeautifulSoup(page_response.text, "html5lib")
-    #title  = str(soup.find("h1").string)
-    '''
     allcourses = soup.find_all("div", class_="courseblock")
     for course in allcourses:
         course_block_title = unicodedata.normalize("NFKD", str(course.find("p", class_="courseblocktitle").string))
@@ -39,20 +45,30 @@ if __name__ == "__main__":
         course_desc = unicodedata.normalize("NFKD", course_desc)
         print(course_desc)
 
-        #print(title)
-
         doc_ref = db.collection('courselist').document(course_code)
         doc_ref.set({
+            'name': course_code + ": " + course_name,
             'course_code': course_code,
             'course_name': course_name,
             'course_units': course_units,
             'course_desc': course_desc
         })
 
-    '''
+def retrieve_source():
+    source = []
     doc_ref = db.collection('courselist')
-    doc = doc_ref.get()
-    for d in doc:
-        dstring = u'{}: {}'.format(d.id,d.to_dict())
+    docs = doc_ref.get()
+    for doc in docs:
+        d = doc.to_dict()
+        dstring = u'{}: {}'.format(doc.id,d)
         print(dstring)
         print()
+        source.append(d)
+    for s in source:
+        print(s)
+    return source
+
+
+
+if __name__ == "__main__":
+    app.run(debug = True)
