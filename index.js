@@ -1,3 +1,5 @@
+
+
 $(document).ready(function(){
 
   var $input = $(".typeahead");
