@@ -5,15 +5,26 @@ from firebase_admin import credentials
 from firebase_admin import firestore
 import unicodedata
 
-page_url = "http://catalogue.uci.edu/allcourses/compsci/"
-page_response = requests.get(page_url)
-
 cred = credentials.Certificate('planeater-382fd1e9a9ee.json')
 firebase_admin.initialize_app(cred)
 
 db = firestore.client()
 
-def scrape_and_store():
+def is_link(tag):
+    return tag.has_attr('href') and tag.name == "a"
+
+def get_urls_and_scrape():
+    base_url = "http://catalogue.uci.edu/"
+    page_response = requests.get(base_url + "allcourses")
+    soup = BeautifulSoup(page_response.text, "html5lib")
+    div = soup.find("div", id="atozindex")
+    links = div.find_all(is_link)
+    for l in links:
+        url = base_url + l["href"]
+        response = requests.get(url)
+        scrape_and_store(response)
+
+def scrape_and_store(page_response):
     soup = BeautifulSoup(page_response.text, "html5lib")
     allcourses = soup.find_all("div", class_="courseblock")
     for course in allcourses:
@@ -36,9 +47,9 @@ def scrape_and_store():
         course_desc = unicodedata.normalize("NFKD", course_desc)
         print(course_desc)
 
-        doc_ref = db.collection('courselist').document(course_code)
+        doc_ref = db.collection('courselist').document(course_code.replace("/","-")) #firestore won't allow / in the name
         doc_ref.set({
-            'name': course_code + ": " + course_name, #displayed in autofill
+            'name': course_code, # + ": " + course_name, #displayed in autofill
             'course_code': course_code,
             'course_name': course_name,
             'course_units': course_units,
@@ -46,4 +57,4 @@ def scrape_and_store():
         })
 
 if __name__ == "__main__":
-    scrape_and_store()
+    get_urls_and_scrape()
